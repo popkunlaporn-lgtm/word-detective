@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="th"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Word Detective: นักสืบคำศัพท์ ไขรหัสลับ</title>
+<style>
+:root{--bg:#1b1f3b;--bg2:#2d2a5a;--card:#fff8e7;--ink:#2b2340;--gold:#ffc83d;--g:#2ecc71;--y:#f1c40f;--r:#e74c3c;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#12142b;--bg2:#241f4a}}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;min-height:100vh;font-family:'Prompt','Sarabun','Noto Sans Thai',system-ui,sans-serif;color:var(--ink);background:radial-gradient(circle at 20% 10%,#4b3f9e55,transparent 40%),linear-gradient(160deg,var(--bg),var(--bg2));background-color:var(--bg);overflow-x:hidden}
+.stars{position:fixed;inset:0;pointer-events:none;background-image:radial-gradient(2px 2px at 20% 30%,#fff9,transparent),radial-gradient(2px 2px at 70% 20%,#fff9,transparent),radial-gradient(1.5px 1.5px at 40% 80%,#fff8,transparent),radial-gradient(2px 2px at 85% 65%,#fff9,transparent);animation:tw 4s infinite alternate}
+@keyframes tw{to{opacity:.4}}
+.wrap{position:relative;max-width:900px;margin:0 auto;padding:14px}
+h1{color:var(--gold);text-align:center;margin:6px 0;text-shadow:0 3px 0 #0006;font-size:clamp(24px,6vw,40px)}
+.sub{color:#fff;text-align:center;opacity:.9;margin:0 0 10px}
+.bar{display:flex;gap:8px;justify-content:space-between;align-items:center;color:#fff;background:#0004;border-radius:14px;padding:8px 14px;margin-bottom:10px;flex-wrap:wrap}
+.bar b{color:var(--gold);font-size:20px}
+.combo{background:linear-gradient(#ff7a18,#e8430c);padding:2px 12px;border-radius:99px;font-weight:700;transition:transform .2s}
+.combo.pop{transform:scale(1.4)}
+.card{background:var(--card);border-radius:20px;padding:18px;box-shadow:0 8px 0 #0004,0 18px 30px #0005;border:3px solid #e0b25a}
+.passage{line-height:2.4;font-size:clamp(16px,3.8vw,20px)}
+.passage b{color:#a0451a;background:#ffe9a8;border-radius:5px;padding:0 3px}
+.blank{display:inline-block;min-width:96px;text-align:center;border-bottom:3px dashed #8a6d3b;margin:0 3px;padding:0 6px;border-radius:8px;cursor:pointer;font-weight:700;vertical-align:middle;line-height:1.5;transition:.2s}
+.blank small{display:block;font-size:11px;font-weight:400;color:#333}
+.blank.sel{background:#ffe08a;box-shadow:0 0 0 3px var(--gold);animation:pulse 1s infinite}
+@keyframes pulse{50%{transform:scale(1.06)}}
+.blank.g{background:var(--g);color:#fff;border-color:transparent;animation:pop .5s}
+.blank.y{background:var(--y);color:#3a2d00;border-color:transparent;animation:shake .4s}
+.blank.r{background:var(--r);color:#fff;border-color:transparent;animation:shake .4s}
+@keyframes pop{50%{transform:scale(1.3) rotate(-4deg)}}
+@keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.chips{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;margin-top:14px}
+.chip{border:0;border-radius:14px;padding:8px 6px;background:linear-gradient(#6f5bd6,#4b3aa8);color:#fff;font:inherit;cursor:pointer;box-shadow:0 5px 0 #2c2170;transition:.1s}
+.chip:active{transform:translateY(4px);box-shadow:0 1px 0 #2c2170}
+.chip b{display:block;font-size:16px}.chip span{font-size:12px;opacity:.9}
+.chip.used{opacity:.25;pointer-events:none}
+.btn{border:0;border-radius:16px;padding:12px 26px;font:inherit;font-weight:700;font-size:18px;color:#3a2500;background:linear-gradient(#ffd75e,#f5a300);box-shadow:0 6px 0 #a56a00;cursor:pointer;margin:6px}
+.btn:active{transform:translateY(4px);box-shadow:0 2px 0 #a56a00}
+.center{text-align:center}
+.legend{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;font-size:13px;margin:8px 0}
+.legend i{padding:2px 10px;border-radius:99px;font-style:normal;color:#fff}
+input.ans{width:130px;font:inherit;font-weight:700;text-align:center;border:3px solid #8a6d3b;border-radius:10px;padding:2px 6px;background:#fff;color:#222}
+input.ans.g{background:var(--g);color:#fff;border-color:var(--g)}input.ans.r{background:var(--r);color:#fff;border-color:var(--r)}
+.m2b{display:inline-block;text-align:center;vertical-align:middle;line-height:1.3;margin:4px 3px}
+.m2b small{display:block;font-size:12px;color:#7a3b00}
+.m2b em{display:block;font-size:12px;font-style:normal;color:var(--r);font-weight:700}
+.hide{display:none}
+/* 3D detective */
+.stage{perspective:700px;height:170px;display:flex;justify-content:center;margin:6px 0}
+.det{position:relative;width:120px;height:160px;transform-style:preserve-3d;animation:sway 4s ease-in-out infinite,bob 2s ease-in-out infinite}
+@keyframes sway{0%,100%{transform:rotateY(-22deg)}50%{transform:rotateY(22deg)}}
+@keyframes bob{50%{margin-top:-10px}}
+.det .body{position:absolute;bottom:0;left:18px;width:84px;height:68px;border-radius:30px 30px 14px 14px;background:radial-gradient(circle at 30% 25%,#e8c88a,#b9873f 60%,#7d5522);box-shadow:inset -8px -8px 14px #0004,0 12px 14px #0005}
+.det .body:after{content:"";position:absolute;left:38px;top:0;width:8px;height:100%;background:#7d5522;opacity:.6}
+.det .head{position:absolute;top:30px;left:20px;width:80px;height:80px;border-radius:50%;background:radial-gradient(circle at 32% 28%,#ffe3c4,#f5b98a 55%,#c9855a);box-shadow:inset -8px -10px 16px #0003,0 6px 10px #0004;transform:translateZ(20px)}
+.eye{position:absolute;top:30px;width:20px;height:22px;background:#fff;border-radius:50%;box-shadow:inset -2px -3px 4px #0003;animation:blink 4s infinite;overflow:hidden}
+.eye:after{content:"";position:absolute;left:6px;top:7px;width:10px;height:12px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#555,#111)}
+.eye.l{left:15px}.eye.rr{right:15px}
+@keyframes blink{0%,94%,100%{transform:scaleY(1)}97%{transform:scaleY(.1)}}
+.smile{position:absolute;left:26px;top:56px;width:28px;height:14px;border-bottom:4px solid #7a2d2d;border-radius:0 0 28px 28px}
+.cheek{position:absolute;top:52px;width:12px;height:8px;border-radius:50%;background:#ff8f8f88}
+.hat{position:absolute;top:6px;left:12px;width:96px;height:48px;transform:translateZ(34px)}
+.hat:before{content:"";position:absolute;bottom:0;left:0;width:96px;height:16px;border-radius:50%;background:radial-gradient(#8a5a2b,#5a3718);box-shadow:0 6px 8px #0005}
+.hat:after{content:"";position:absolute;left:18px;top:0;width:60px;height:34px;border-radius:30px 30px 6px 6px;background:radial-gradient(circle at 30% 20%,#b57a3c,#6b4220);box-shadow:inset -6px -4px 8px #0004}
+.lens{position:absolute;right:-26px;top:82px;font-size:44px;transform:translateZ(50px);transform-origin:bottom left;animation:search 2s ease-in-out infinite;filter:drop-shadow(3px 5px 3px #0006)}
+@keyframes search{50%{transform:translateZ(50px) rotate(-25deg) translateY(-6px)}}
+.det.sm{transform:scale(.6)}
+.mood-g{animation:sway 1s infinite,jump .5s 2}@keyframes jump{50%{margin-top:-30px}}
+.speech{background:#fff;color:var(--ink);border-radius:14px;padding:6px 14px;font-size:14px;max-width:260px;margin:0 auto 6px;text-align:center;box-shadow:0 4px 0 #0003}
+.result-score{font-size:64px;color:var(--gold);font-weight:800;text-shadow:0 4px 0 #0006}
+</style></head>
+<body><div class="stars"></div>
+<div class="wrap">
+<h1>🔍 Word Detective</h1>
+<p class="sub">นักสืบคำศัพท์: ไขรหัสลับ (Crack the Codes)</p>
+
+<div class="stage"><div class="det" id="det"><div class="body"></div><div class="head"><div class="eye l"></div><div class="eye rr"></div><div class="cheek" style="left:6px"></div><div class="cheek" style="right:6px"></div><div class="smile"></div></div><div class="hat"></div><div class="lens">🔍</div></div></div>
+<div class="speech" id="say">สวัสดี! ฉันคือนักสืบแม็กซ์ มาช่วยกันไขคดีคำศัพท์!</div>
+
+<div class="bar" id="bar" style="display:none"><span id="mname"></span><span>คะแนน <b id="score">0</b></span><span class="combo" id="combo">Combo ×1</span></div>
+
+<div id="start" class="card center">
+<h2>🕵️ ภารกิจของนักสืบ</h2>
+<p><b>Mission 1 — Clue Finder (ล่าเบาะแส)</b><br>เติมคำศัพท์ 12 คำลงใน Passage โดยดูเบาะแสจาก Keywords</p>
+<div class="legend"><i style="background:var(--g)">เขียว ถูก +10 (Combo ×2 ×3 ×4…)</i><i style="background:var(--y);color:#333">เหลือง ผิดแต่หมวดเดียวกัน +5</i><i style="background:var(--r)">แดง ผิดคนละหมวด 0</i></div>
+<p><b>Mission 2 — Word Cracker (แกะรหัสคำศัพท์)</b><br>พิมพ์คำศัพท์ภาษาอังกฤษ 8 คำจากคำแปลไทย &nbsp;ถูก +10 / ผิด −10</p>
+<button class="btn" onclick="startM1()">เริ่มภารกิจ 1 ▶</button>
+</div>
+
+<div id="m1" class="hide">
+<div class="card"><div class="passage" id="p1"></div></div>
+<div class="chips" id="chips"></div>
+</div>
+
+<div id="m2" class="hide">
+<div class="card"><div class="passage" id="p2"></div></div>
+<div class="center"><button class="btn" onclick="checkAll()">ตรวจคำตอบ ✔</button></div>
+</div>
+
+<div id="end" class="card center hide"></div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const say=t=>$('say').textContent=t;
+const SUB={Math:'คณิตศาสตร์',Science:'วิทยาศาสตร์',Social:'สังคมศึกษา',Language:'ภาษา'};
+const W1={fraction:['Math','เศษส่วน'],angle:['Math','มุม'],equation:['Math','สมการ'],gravity:['Science','แรงโน้มถ่วง'],magnet:['Science','แม่เหล็ก'],habitat:['Science','ที่อยู่อาศัย'],border:['Social','พรมแดน'],culture:['Social','วัฒนธรรม'],government:['Social','รัฐบาล'],noun:['Language','คำนาม'],sentence:['Language','ประโยค'],paragraph:['Language','ย่อหน้า']};
+const P1="Detective Max found a note: “Read every {sentence} in the first {paragraph}.” The first <b>word naming a place</b>, a {noun}, was the map room. On the wall hung a map with a red line, a {border}, between two <b>countries</b>. Max studied the {culture}, the <b>festivals and food</b> of the people, and the {government} that <b>leads the country</b>. A hidden safe was held shut by a {magnet} that <b>attracts iron</b>. Nearby, a ball <b>fell to the floor</b> because of {gravity}. The code was a {fraction}, <b>three over four</b>, and the lock turned at an {angle} of <b>ninety degrees</b>. For the final puzzle Max solved an {equation}: <b>x + 5 = 12</b>. The thief hid in a cave, a perfect {habitat} for <b>bats</b>!";
+const W2={planet:'ดาวเคราะห์',volcano:'ภูเขาไฟ',energy:'พลังงาน',triangle:'สามเหลี่ยม',total:'ผลรวม',history:'ประวัติศาสตร์',continent:'ทวีป',adjective:'คำคุณศัพท์'};
+const P2="The clue pointed to a {planet} that circles the sun. A {volcano} there gives off heat and {energy}. A shape with three sides, a {triangle}, was carved in the rock. Max added 8 and 9 to find the {total}. Old books about {history} told of a lost {continent}. The word “shiny” is an {adjective} that describes the treasure.";
+let score=0,streak=0,sel=null,done=0,key=[];
+function upd(){ $('score').textContent=score; const c=$('combo'); c.textContent='Combo ×'+Math.max(1,streak); c.classList.add('pop'); setTimeout(()=>c.classList.remove('pop'),200);}
+function show(id){['start','m1','m2','end'].forEach(x=>$(x).classList.toggle('hide',x!==id)); $('bar').style.display=id==='start'||id==='end'?'none':'flex';}
+function cheer(){const d=$('det');d.classList.add('mood-g');setTimeout(()=>d.classList.remove('mood-g'),1100)}
+function startM1(){
+ show('m1');$('mname').textContent='Mission 1: Clue Finder';$('combo').style.display='';score=0;streak=0;done=0;sel=null;upd();
+ let n=0;key=[];
+ $('p1').innerHTML=P1.replace(/\{(\w+)\}/g,(_,w)=>{key.push(w);return `<span class="blank" data-i="${n}" onclick="pick(${n++})">?</span>`});
+ $('chips').innerHTML=Object.keys(W1).sort(()=>Math.random()-.5).map(w=>`<button class="chip" data-w="${w}" onclick="use('${w}')"><b>${w}</b><span>${W1[w][1]}</span></button>`).join('');
+ say('คลิกช่องว่าง แล้วเลือกคำศัพท์ที่ใช่!');
+}
+function pick(i){const b=document.querySelector(`.blank[data-i="${i}"]`);if(b.dataset.lock)return;document.querySelectorAll('.blank.sel').forEach(x=>x.classList.remove('sel'));b.classList.add('sel');sel=i}
+function use(w){
+ if(sel===null){say('เลือกช่องว่างก่อนนะ 👆');return}
+ const b=document.querySelector(`.blank[data-i="${sel}"]`),ans=key[sel];
+ b.classList.remove('sel');b.dataset.lock=1;b.innerHTML=w;
+ if(w===ans){streak++;score+=10*streak;b.classList.add('g');document.querySelector(`.chip[data-w="${w}"]`).classList.add('used');say(streak>1?`เยี่ยม! คอมโบ ×${streak} 🔥`:'ถูกต้อง! +10 ✨');cheer();}
+ else if(W1[w][0]===W1[ans][0]){streak=0;score+=5;b.classList.add('y');b.innerHTML+=`<small>เฉลย: ${ans}</small>`;say('ใกล้เคียง! วิชาเดียวกัน +5 🟡')}
+ else{streak=0;b.classList.add('r');b.innerHTML+=`<small>เฉลย: ${ans}</small>`;say('อุ๊ย! คนละหมวดวิชา 0 🔴')}
+ sel=null;done++;upd();
+ if(done===12)setTimeout(()=>{say('จบภารกิจ 1! ไปต่อภารกิจที่ 2 กัน');$('chips').innerHTML='<div class="center" style="grid-column:1/-1"><button class="btn" onclick="startM2()">ไปภารกิจ 2 ▶</button></div>'},700);
+}
+function startM2(){
+ const s1=score;show('m2');$('mname').textContent='Mission 2: Word Cracker';$('combo').style.display='none';window.s1=s1;done=0;key=[];
+ let n=0;
+ $('p2').innerHTML=P2.replace(/\{(\w+)\}/g,(_,w)=>{key.push(w);const i=n++;return `<span class="m2b" data-i="${i}"><small>${W2[w]}</small><input class="ans" autocomplete="off" autocapitalize="off" spellcheck="false" data-i="${i}" onkeydown="if(event.key==='Enter')chk(${i})"></span>`});
+ say('พิมพ์คำศัพท์ภาษาอังกฤษ แล้วกด Enter หรือปุ่มตรวจ');
+}
+function chk(i){
+ const inp=document.querySelector(`input.ans[data-i="${i}"]`);if(inp.disabled)return;
+ const v=inp.value.trim().toLowerCase();if(!v)return;
+ inp.disabled=true;done++;
+ if(v===key[i]){score+=10;inp.classList.add('g');say('ถูกต้อง! +10 🟢');cheer()}
+ else{score-=10;inp.classList.add('r');inp.parentNode.insertAdjacentHTML('beforeend',`<em>เฉลย: ${key[i]}</em>`);say('ผิด −10 🔴 ดูเฉลยแล้วจำไว้นะ')}
+ upd();if(done===8)setTimeout(finish,1200);
+}
+function checkAll(){document.querySelectorAll('input.ans').forEach((_,i)=>{const x=document.querySelector(`input.ans[data-i="${i}"]`);if(!x.disabled){if(!x.value.trim())x.value='—';chk(i)}})}
+function finish(){
+ show('end');
+ const t=score,m1=window.s1;
+ const rank=t>=170?'🏆 นักสืบสุดยอด':t>=100?'🥈 นักสืบมืออาชีพ':'🥉 นักสืบฝึกหัด';
+ $('end').innerHTML=`<h2>ปิดคดีสำเร็จ! 🎉</h2><div class="result-score">${t}</div><p>ภารกิจ 1: ${m1} คะแนน &nbsp;|&nbsp; ภารกิจ 2: ${t-m1} คะแนน</p><h3>${rank}</h3><button class="btn" onclick="show('start');say('พร้อมไขคดีใหม่หรือยัง?')">เล่นอีกครั้ง 🔁</button>`;
+ say('เก่งมาก! คดีนี้ปิดแล้ว!');cheer();
+}
+</script></body></html>
