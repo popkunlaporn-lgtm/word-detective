@@ -45,6 +45,7 @@ input.ans.g{background:var(--g);color:#fff;border-color:var(--g)}input.ans.r{bac
 .m2b small{display:block;font-size:12px;color:#7a3b00}
 .m2b em{display:block;font-size:12px;font-style:normal;color:var(--r);font-weight:700}
 .hide{display:none}
+#mute{position:fixed;top:calc(10px + env(safe-area-inset-top,0px));right:10px;z-index:9;border:0;border-radius:50%;width:44px;height:44px;font-size:22px;background:#0006;color:#fff;cursor:pointer}
 /* 3D detective */
 .stage{perspective:700px;height:170px;display:flex;justify-content:center;margin:6px 0}
 .det{position:relative;width:120px;height:160px;transform-style:preserve-3d;animation:sway 4s ease-in-out infinite,bob 2s ease-in-out infinite}
@@ -70,6 +71,7 @@ input.ans.g{background:var(--g);color:#fff;border-color:var(--g)}input.ans.r{bac
 .result-score{font-size:64px;color:var(--gold);font-weight:800;text-shadow:0 4px 0 #0006}
 </style></head>
 <body><div class="stars"></div>
+<button id="mute" onclick="toggleMute()" title="เปิด/ปิดเสียง">🔊</button>
 <div class="wrap">
 <h1>🔍 Word Detective</h1>
 <p class="sub">นักสืบคำศัพท์: ไขรหัสลับ (Crack the Codes)</p>
@@ -102,6 +104,19 @@ input.ans.g{background:var(--g);color:#fff;border-color:var(--g)}input.ans.r{bac
 
 <script>
 const $=id=>document.getElementById(id);
+let AC,muted=false;
+function ac(){if(!AC){try{AC=new (window.AudioContext||window.webkitAudioContext)()}catch(e){}}if(AC&&AC.state==='suspended')AC.resume();return AC}
+function tone(f,d,o={}){if(muted)return;const c=ac();if(!c)return;const t=c.currentTime+(o.at||0),g=c.createGain(),x=c.createOscillator();x.type=o.type||'sine';x.frequency.setValueAtTime(f,t);if(o.to)x.frequency.exponentialRampToValueAtTime(o.to,t+d);g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(o.v||.18,t+.02);g.gain.exponentialRampToValueAtTime(.0001,t+d);x.connect(g).connect(c.destination);x.start(t);x.stop(t+d+.05)}
+const sfx={
+ click(){tone(660,.08,{type:'triangle',v:.12});tone(880,.06,{type:'triangle',v:.08,at:.05})},
+ good(n){const b=523.25*Math.pow(1.122,Math.min(n,8)-1);[1,1.26,1.5].forEach((m,i)=>tone(b*m,.18,{type:'square',v:.07,at:i*.07}));tone(b*2,.3,{v:.12,at:.22})},
+ mid(){tone(440,.15,{type:'triangle',v:.15});tone(392,.2,{type:'triangle',v:.15,at:.12})},
+ bad(){tone(220,.35,{type:'sawtooth',v:.12,to:90})},
+ win(){[523,659,784,1047,784,1047,1319].forEach((f,i)=>tone(f,.22,{type:'square',v:.08,at:i*.12}))}
+};
+function toggleMute(){muted=!muted;$('mute').textContent=muted?'🔇':'🔊';if(!muted)sfx.click()}
+document.addEventListener('click',e=>{if(e.target.closest('.btn,.blank,#start'))sfx.click()},true);
+document.addEventListener('keydown',e=>{if(e.target.matches&&e.target.matches('input.ans')&&e.key.length===1)tone(900+Math.random()*200,.04,{type:'triangle',v:.05})});
 const say=t=>$('say').textContent=t;
 const SUB={Math:'คณิตศาสตร์',Science:'วิทยาศาสตร์',Social:'สังคมศึกษา',Language:'ภาษา'};
 const W1={fraction:['Math','เศษส่วน'],angle:['Math','มุม'],equation:['Math','สมการ'],gravity:['Science','แรงโน้มถ่วง'],magnet:['Science','แม่เหล็ก'],habitat:['Science','ที่อยู่อาศัย'],border:['Social','พรมแดน'],culture:['Social','วัฒนธรรม'],government:['Social','รัฐบาล'],noun:['Language','คำนาม'],sentence:['Language','ประโยค'],paragraph:['Language','ย่อหน้า']};
@@ -121,12 +136,12 @@ function startM1(){
 }
 function pick(i){const b=document.querySelector(`.blank[data-i="${i}"]`);if(b.dataset.lock)return;document.querySelectorAll('.blank.sel').forEach(x=>x.classList.remove('sel'));b.classList.add('sel');sel=i}
 function use(w){
- if(sel===null){say('เลือกช่องว่างก่อนนะ 👆');return}
+ if(sel===null){say('เลือกช่องว่างก่อนนะ 👆');sfx.mid();return}
  const b=document.querySelector(`.blank[data-i="${sel}"]`),ans=key[sel];
  b.classList.remove('sel');b.dataset.lock=1;b.innerHTML=w;
- if(w===ans){streak++;score+=10*streak;b.classList.add('g');document.querySelector(`.chip[data-w="${w}"]`).classList.add('used');say(streak>1?`เยี่ยม! คอมโบ ×${streak} 🔥`:'ถูกต้อง! +10 ✨');cheer();}
- else if(W1[w][0]===W1[ans][0]){streak=0;score+=5;b.classList.add('y');b.innerHTML+=`<small>เฉลย: ${ans}</small>`;say('ใกล้เคียง! วิชาเดียวกัน +5 🟡')}
- else{streak=0;b.classList.add('r');b.innerHTML+=`<small>เฉลย: ${ans}</small>`;say('อุ๊ย! คนละหมวดวิชา 0 🔴')}
+ if(w===ans){streak++;score+=10*streak;sfx.good(streak);b.classList.add('g');document.querySelector(`.chip[data-w="${w}"]`).classList.add('used');say(streak>1?`เยี่ยม! คอมโบ ×${streak} 🔥`:'ถูกต้อง! +10 ✨');cheer();}
+ else if(W1[w][0]===W1[ans][0]){streak=0;score+=5;sfx.mid();b.classList.add('y');b.innerHTML+=`<small>เฉลย: ${ans}</small>`;say('ใกล้เคียง! วิชาเดียวกัน +5 🟡')}
+ else{streak=0;sfx.bad();b.classList.add('r');b.innerHTML+=`<small>เฉลย: ${ans}</small>`;say('อุ๊ย! คนละหมวดวิชา 0 🔴')}
  sel=null;done++;upd();
  if(done===12)setTimeout(()=>{say('จบภารกิจ 1! ไปต่อภารกิจที่ 2 กัน');$('chips').innerHTML='<div class="center" style="grid-column:1/-1"><button class="btn" onclick="startM2()">ไปภารกิจ 2 ▶</button></div>'},700);
 }
@@ -140,8 +155,8 @@ function chk(i){
  const inp=document.querySelector(`input.ans[data-i="${i}"]`);if(inp.disabled)return;
  const v=inp.value.trim().toLowerCase();if(!v)return;
  inp.disabled=true;done++;
- if(v===key[i]){score+=10;inp.classList.add('g');say('ถูกต้อง! +10 🟢');cheer()}
- else{score-=10;inp.classList.add('r');inp.parentNode.insertAdjacentHTML('beforeend',`<em>เฉลย: ${key[i]}</em>`);say('ผิด −10 🔴 ดูเฉลยแล้วจำไว้นะ')}
+ if(v===key[i]){score+=10;sfx.good(2);inp.classList.add('g');say('ถูกต้อง! +10 🟢');cheer()}
+ else{score-=10;sfx.bad();inp.classList.add('r');inp.parentNode.insertAdjacentHTML('beforeend',`<em>เฉลย: ${key[i]}</em>`);say('ผิด −10 🔴 ดูเฉลยแล้วจำไว้นะ')}
  upd();if(done===8)setTimeout(finish,1200);
 }
 function checkAll(){document.querySelectorAll('input.ans').forEach((_,i)=>{const x=document.querySelector(`input.ans[data-i="${i}"]`);if(!x.disabled){if(!x.value.trim())x.value='—';chk(i)}})}
@@ -150,6 +165,6 @@ function finish(){
  const t=score,m1=window.s1;
  const rank=t>=170?'🏆 นักสืบสุดยอด':t>=100?'🥈 นักสืบมืออาชีพ':'🥉 นักสืบฝึกหัด';
  $('end').innerHTML=`<h2>ปิดคดีสำเร็จ! 🎉</h2><div class="result-score">${t}</div><p>ภารกิจ 1: ${m1} คะแนน &nbsp;|&nbsp; ภารกิจ 2: ${t-m1} คะแนน</p><h3>${rank}</h3><button class="btn" onclick="show('start');say('พร้อมไขคดีใหม่หรือยัง?')">เล่นอีกครั้ง 🔁</button>`;
- say('เก่งมาก! คดีนี้ปิดแล้ว!');cheer();
+ say('เก่งมาก! คดีนี้ปิดแล้ว!');cheer();sfx.win();
 }
 </script></body></html>
